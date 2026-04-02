@@ -93,73 +93,51 @@ def select_mat_for_reward(materials):
 
 
 def calculate_reward(materials):
-    """====================================================================================================
-    ## Load Materials For Reward Design
-    ===================================================================================================="""
-    # Load materials for reward design
     mat = select_mat_for_reward(materials)
 
-    """====================================================================================================
-    ## Defining Scale Factors and Calculating Reward
-    ===================================================================================================="""
-    # Define Scale Factor for Point Score Reward
     SCALE_POINT_SCORE_REWARD = 25.0
     SCALE_POINT_LOST_PENALTY = 25.0
+    SCALE_SELF_SPIKE_BONUS = 1.0
+    SCALE_SELF_DIVE_BONUS = 0.0    # 점프 유발 원인 → 0으로
+    SCALE_OPPONENT_DIVE_BONUS = 0.
+    SCALE_OPPONENT_SPIKE_PENALTY = 0.
+    SCALE_RALLY_FRAME = 0.
+    SCALE_RALLY_FRAME_MAX = 0.
+    SCALE_MATCH_WIN_BONUS = 30.0
 
-    # Define Scale Factor for Self Bonus/Penalty
-    SCALE_SELF_SPIKE_BONUS = 2.0
-    SCALE_SELF_DIVE_BONUS = 1.0
+    # Initialize Reward
+    reward = 0.0
 
+    # 공 근접 보상 (공이 내 코트에 있을 때만)
     ball_x, ball_y = mat["ball_position"]
     self_x, self_y = mat["self_position"]
     ball_distance = abs(self_x - ball_x) + abs(self_y - ball_y)
-    # Initialize Reward at the Certain Transition Step
-    reward = 0.0
-    ball_proximity_reward = normalize_minmax(-ball_distance, -600, 0) * 3.0
-    reward += ball_proximity_reward
-    
-    # Define Scale Factor for Opponent Bonus/Penalty
-    SCALE_OPPONENT_DIVE_BONUS = 0.
-    SCALE_OPPONENT_SPIKE_PENALTY = 0.
+    if ball_x < GROUND_HALF_WIDTH:
+        ball_proximity_reward = normalize_minmax(-ball_distance, -600, 0) * 0.3
+        reward += ball_proximity_reward
 
-    # Define Scale Factor for Rally Frame Reward
-    SCALE_RALLY_FRAME = 0.
-    SCALE_RALLY_FRAME_MAX = 0.
-
-    # Define Scale Factor for Match Win Bonus
-    SCALE_MATCH_WIN_BONUS = 30.0
-
-    """====================================================================================================
-    ## Calculating Reward by Accumulating Different Components
-    ===================================================================================================="""
-
-    # Accumulate Point Score Reward
+    # 득점/실점
     reward += SCALE_POINT_SCORE_REWARD * mat["point_scored"]
     reward -= SCALE_POINT_LOST_PENALTY * mat["point_lost"]
 
-    # Accumulate Self Bonus/Penalty Reward
+    # 스파이크 보너스
     reward += SCALE_SELF_SPIKE_BONUS * mat["self_spike_used"]
     reward += SCALE_SELF_DIVE_BONUS * mat["self_dive_used"]
 
-    # Accumulate Opponent Bonus/Penalty Reward
+    # 상대 보너스/패널티
     reward += SCALE_OPPONENT_DIVE_BONUS * mat["opponent_dive_used"]
     reward -= SCALE_OPPONENT_SPIKE_PENALTY * mat["opponent_spike_used"]
 
-    # Accumulate Rally Frame Reward
+    # 랠리 보상
     rally_reward = 0.0
     if mat["point_scored"] > 0.5:
         rally_reward = min(mat["rally_total_frames_until_point"] * SCALE_RALLY_FRAME,
                            SCALE_RALLY_FRAME_MAX)
     reward += rally_reward
 
-    # Accumulate Match Win Reward
+    # 매치 승리
     reward += SCALE_MATCH_WIN_BONUS * mat["match_won"]
 
-    # Normalize Reward to 0~1 with a Fixed Reward Window
-    REWARD_NORMALIZE_MIN = -100.0
-    REWARD_NORMALIZE_MAX = 100.0
-    reward = normalize_minmax(
-        reward, REWARD_NORMALIZE_MIN, REWARD_NORMALIZE_MAX)
-
-    # Return Calculated Reward
+    # 정규화
+    reward = normalize_minmax(reward, -100.0, 100.0)
     return reward

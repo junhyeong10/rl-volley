@@ -8,16 +8,16 @@ def get_train_params():
         "learning_rate": 3e-4,
 
         # Discount Factor
-        "gamma": 0.9999,
+        "gamma": 0.99,
 
         # Epsilon-Greedy Exploration Parameters
         "epsilon_start": 1.0,
         "epsilon_end": 0.1,
-        "epsilon_decay": 0.9995,
+        "epsilon_decay": 0.9999,
 
         # Replay Buffer Parameters
         "replay_buffer_size": 50000,
-        "replay_start_size": 128,
+        "replay_start_size": 2000,
         "batch_size": 128,
 
         # Neural Network Architecture Parameters
