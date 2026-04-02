@@ -8,11 +8,11 @@ def get_train_params():
         "learning_rate": 3e-4,
 
         # Discount Factor
-        "gamma": 0.995,
+        "gamma": 0.9999,
 
         # Epsilon-Greedy Exploration Parameters
         "epsilon_start": 1.0,
-        "epsilon_end": 0.02,
+        "epsilon_end": 0.1,
         "epsilon_decay": 0.9995,
 
         # Replay Buffer Parameters

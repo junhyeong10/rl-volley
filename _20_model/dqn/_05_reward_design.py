@@ -107,13 +107,15 @@ def calculate_reward(materials):
     SCALE_POINT_LOST_PENALTY = 25.0
 
     # Define Scale Factor for Self Bonus/Penalty
-    SCALE_SELF_SPIKE_BONUS = 1.0
+    SCALE_SELF_SPIKE_BONUS = 2.0
     SCALE_SELF_DIVE_BONUS = 1.0
 
     ball_x, ball_y = mat["ball_position"]
     self_x, self_y = mat["self_position"]
     ball_distance = abs(self_x - ball_x) + abs(self_y - ball_y)
-    ball_proximity_reward = normalize_minmax(-ball_distance, -600, 0) * 0.3
+    # Initialize Reward at the Certain Transition Step
+    reward = 0.0
+    ball_proximity_reward = normalize_minmax(-ball_distance, -600, 0) * 3.0
     reward += ball_proximity_reward
     
     # Define Scale Factor for Opponent Bonus/Penalty
@@ -130,8 +132,6 @@ def calculate_reward(materials):
     """====================================================================================================
     ## Calculating Reward by Accumulating Different Components
     ===================================================================================================="""
-    # Initialize Reward at the Certain Transition Step
-    reward = 0.0
 
     # Accumulate Point Score Reward
     reward += SCALE_POINT_SCORE_REWARD * mat["point_scored"]
