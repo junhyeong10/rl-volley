@@ -95,49 +95,52 @@ def select_mat_for_reward(materials):
 def calculate_reward(materials):
     mat = select_mat_for_reward(materials)
 
-    SCALE_POINT_SCORE_REWARD = 25.0
-    SCALE_POINT_LOST_PENALTY = 25.0
-    SCALE_SELF_SPIKE_BONUS = 1.0
-    SCALE_SELF_DIVE_BONUS = 0.0    # 점프 유발 원인 → 0으로
-    SCALE_OPPONENT_DIVE_BONUS = 0.
-    SCALE_OPPONENT_SPIKE_PENALTY = 0.
-    SCALE_RALLY_FRAME = 0.
-    SCALE_RALLY_FRAME_MAX = 0.
-    SCALE_MATCH_WIN_BONUS = 30.0
+    SCALE_POINT_SCORE_REWARD = 1.0
+    SCALE_POINT_LOST_PENALTY = 1.0
+    SCALE_SELF_SPIKE_BONUS = 0.05
+    SCALE_SELF_DIVE_BONUS = 0.0
+    SCALE_OPPONENT_DIVE_BONUS = 0.0
+    SCALE_OPPONENT_SPIKE_PENALTY = 0.0
+    SCALE_RALLY_FRAME = 0.0
+    SCALE_RALLY_FRAME_MAX = 0.0
+    SCALE_MATCH_WIN_BONUS = 0.2
 
-    # Initialize Reward
     reward = 0.0
 
-    # 공 근접 보상 (공이 내 코트에 있을 때만)
+    # Shaping reward: only when rally is ongoing and the ball is on my side
     ball_x, ball_y = mat["ball_position"]
     self_x, self_y = mat["self_position"]
     ball_distance = abs(self_x - ball_x) + abs(self_y - ball_y)
-    if ball_x < GROUND_HALF_WIDTH:
-        ball_proximity_reward = normalize_minmax(-ball_distance, -600, 0) * 0.3
-        reward += ball_proximity_reward
 
-    # 득점/실점
+    if (mat["point_scored"] == 0) and (mat["point_lost"] == 0):
+        if ball_x < GROUND_HALF_WIDTH:
+            ball_proximity_reward = normalize_minmax(-ball_distance, -600, 0) * 0.004
+            reward += ball_proximity_reward
+
     reward += SCALE_POINT_SCORE_REWARD * mat["point_scored"]
     reward -= SCALE_POINT_LOST_PENALTY * mat["point_lost"]
 
-    # 스파이크 보너스
-    reward += SCALE_SELF_SPIKE_BONUS * mat["self_spike_used"]
-    reward += SCALE_SELF_DIVE_BONUS * mat["self_dive_used"]
+    # Only reward spikes that actually finish the point
+    if mat["point_scored"] > 0.5:
+        reward += SCALE_SELF_SPIKE_BONUS * mat["self_spike_used"]
 
-    # 상대 보너스/패널티
+    reward += SCALE_SELF_DIVE_BONUS * mat["self_dive_used"]
     reward += SCALE_OPPONENT_DIVE_BONUS * mat["opponent_dive_used"]
     reward -= SCALE_OPPONENT_SPIKE_PENALTY * mat["opponent_spike_used"]
 
-    # 랠리 보상
     rally_reward = 0.0
     if mat["point_scored"] > 0.5:
-        rally_reward = min(mat["rally_total_frames_until_point"] * SCALE_RALLY_FRAME,
-                           SCALE_RALLY_FRAME_MAX)
+        rally_reward = min(
+            mat["rally_total_frames_until_point"] * SCALE_RALLY_FRAME,
+            SCALE_RALLY_FRAME_MAX,
+        )
     reward += rally_reward
 
-    # 매치 승리
     reward += SCALE_MATCH_WIN_BONUS * mat["match_won"]
 
-    # 정규화
-    reward = normalize_minmax(reward, -100.0, 100.0)
+    if reward < -1.0:
+        reward = -1.0
+    if reward > 1.0:
+        reward = 1.0
+
     return reward

@@ -32,22 +32,22 @@ def run(conf):
             env.set(player1=model_opponent, player2=model_train,
                     random_serve=conf.random_serve, return_state=False)
 
-        # - Get Initial State
-        state_mat = env.get_state(player=conf.train_side)
-
         # - Run an Episode
         while True:
+            # - Always read the latest environment state
+            state_mat = env.get_state(player=conf.train_side)
+
             # - Get Transition by Action Selection and Environment Run
             transition = model_train.get_transition(env, state_mat)
 
             # - Update Policy by Transition
             model_train.update(transition)
-            env = model_train.env
 
             # - Check Terminate Condition
             done = transition[4]
             if done:
                 break
+
 
     """====================================================================================================
     ## Save Trained Policy at the End of Episode

@@ -117,6 +117,8 @@ def calculate_state_key(materials):
     landing_x = float(materials["expected_landing_x"])
     landing_x = normalize_minmax(landing_x, 0, GROUND_WIDTH - 1)
 
+    ball_on_my_side = 1.0 if float(raw["ball"]["x"]) < GROUND_WIDTH / 2 else 0.0
+    
     """====================================================================================================
     ## State Vector Construction
     ===================================================================================================="""
@@ -133,6 +135,7 @@ def calculate_state_key(materials):
         ball_velocity_x,
         ball_velocity_y,
         landing_x,
+        ball_on_my_side,
     ]
 
     # Return the Constructed State Vector
@@ -143,4 +146,4 @@ def get_state_dim():
     """====================================================================================================
     ## Get the Dimension of Designed State Vector
     ===================================================================================================="""
-    return 11
+    return 12
